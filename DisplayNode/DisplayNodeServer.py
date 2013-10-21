@@ -10,24 +10,21 @@ import BaseHTTPServer
 from SimpleXMLRPCServer import SimpleXMLRPCServer 
 import urllib2
 
-import os, time, random
+import os, time, shutil, random
 from thread import start_new_thread 
 from math import floor
 
 NO_KEY = "<html><head><title>NodeDisplay</title></head><body><p>NodeDisplay: no key</p></body></html>"
-LOCAL  = None 
 
 WEB_ADDRESS   = '127.0.0.1'
 WEB_PORT      = 8001 
 PROXY_ADDRESS = '127.0.0.1'
 PROXY_PORT    = 8002
 
-RESOURCES = {                        
-                'three.js':         {'url':  'https://github.com/mrdoob/three.js/tree/master/build/three.js',     
-                                     'local': False, 
-                                     'location':'./static/'},
+LOCAL_STORAGE_PATH = './._DisplayNode/'
 
-                'three.min.js':     {'url':  'https://github.com/mrdoob/three.js/tree/master/build/three.min.js',     
+RESOURCES = {                        
+                'three.js':         {'url':  'http://stemkoski.github.io/Three.js/js/Three.js',     
                                      'local': False, 
                                      'location':'./static/'},
                                           
@@ -39,11 +36,11 @@ RESOURCES = {
                                      'local':False, 
                                      'location':'./static/'},   
                                      
+
                 'openseadragon.js': {'url':  'openseadragon/openseadragon.js',
                                      'local':True , 
                                      'location':'./static/'},
                                      
-
                 'plot.html':        {'url':  'plot.html',                     
                                      'local':True , 
                                      'location':'./static/'},
@@ -203,6 +200,7 @@ class Graph(Content):
     def make_content(self): 
         self.html = self.resource_manager.get_resource_data(self.template)
         self.html = self._decorate_with_resources(self.html,self.resources) 
+        # FIXME: data
     
 class Three(Content): 
     def __init__(self,data): 
@@ -214,17 +212,34 @@ class Three(Content):
         self.make_content()
         
     def make_content(self): 
-        self.html = "<html><head><title>NodeDisplay</title></head><body><p>Three</p></body></html>"
+        self.html = self.resource_manager.get_resource_data(self.template)
         self.html = self._decorate_with_resources(self.html,self.resources) 
-
+        # FIXME: data
 
 
 
 
 class ResourceManager(): 
-    def __init__(self): 
-        pass 
+    def __init__(self,local_storage_path=LOCAL_STORAGE_PATH): 
+        self.local_storage_path = local_storage_path
+        self.initialize_local_storage()
         
+    def initialize_local_storage(self): 
+        if not os.path.exists(self.local_storage_path): 
+            os.mkdir(self.local_storage_path) 
+        # copy all the resources defined as local 
+        for rname in RESOURCES.keys(): 
+            r = RESOURCES[rname] 
+            if r['local']: 
+                rlocation = r['location']
+                if rlocation.startswith('.'): 
+                    rlocation=rlocation[1:]
+                source = os.path.split(__file__)[0]+rlocation+rname
+                destination = self.local_storage_path+rlocation+rname
+                if not os.path.exists(os.path.split(destination)[0]): 
+                    os.mkdir(os.path.split(destination)[0]) 
+                shutil.copy(source,destination) 
+                    
     def is_resource(self,resource_name): 
         return (resource_name in RESOURCES.keys()) 
          
@@ -241,6 +256,7 @@ class ResourceManager():
                 return False 
             location = RESOURCES[resource]['location']  
             resource = location + resource 
+        resource = self.local_storage_path + resource
         return os.path.exists(resource)
 
     def fetch_resource(self,resource_name): 
@@ -250,8 +266,9 @@ class ResourceManager():
         t = time.time()
         response = urllib2.urlopen(url)
         content = response.read()
-        filename = location + resource_name
-        fid = open(filename,'w')
+        resource = location + resource_name
+        resource = self.local_storage_path + resource
+        fid = open(resource,'w')
         fid.write(content)
         fid.close() 
         print "Fetched %d bytes in %2.3f sec."%(len(content),time.time()-t)
@@ -263,6 +280,7 @@ class ResourceManager():
             if not full_path:
                 location = RESOURCES[resource]['location']
                 resource = location + resource
+            resource = self.local_storage_path + resource
             fid = open(resource,'r') 
             d = fid.read() 
             fid.close()
@@ -286,9 +304,9 @@ class ContentProvider():
         if not (content_descriptor.has_key('type') and content_descriptor.has_key('data')): 
             return 'invalid' 
         if content_descriptor['type'] == 'plot': 
-            content = Plot(content_descriptor['data'])
+            content = Plot(content_descriptor['data']) 
         elif content_descriptor['type'] == 'image': 
-            content = Image(content_descriptor['data'])
+            content = Image(content_descriptor['data']) 
         elif content_descriptor['type'] == 'graph': 
             content = Graph(content_descriptor['data']) 
         elif content_descriptor['type'] == 'three': 
@@ -324,7 +342,7 @@ class ContentProvider():
 
 
 
-class DisplayNode(): 
+class DisplayNodeServer(): 
     def __init__(self,backend_address=(PROXY_ADDRESS,PROXY_PORT),frontend_address=(WEB_ADDRESS,WEB_PORT)): 
         self.frontend_address = frontend_address
         self.backend_address = backend_address
@@ -359,6 +377,6 @@ class DisplayNode():
 
     
 if __name__=="__main__": 
-    F = DisplayNode()
+    F = DisplayNodeServer()
     F.serve_forever()
     
