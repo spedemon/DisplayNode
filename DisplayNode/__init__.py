@@ -5,7 +5,7 @@
 # Aalto University, School of Science, Helsinki
 # 20 Oct 2013, Helsinki 
 
-from DisplayNodeProxy import Display
+from DisplayNodeProxy import DisplayNode
 
 
 

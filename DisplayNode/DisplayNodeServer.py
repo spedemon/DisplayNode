@@ -21,41 +21,59 @@ WEB_PORT      = 8001
 PROXY_ADDRESS = '127.0.0.1'
 PROXY_PORT    = 8002
 
-LOCAL_STORAGE_PATH = './._DisplayNode/'
+LOCAL_STORAGE_PATH = '.'+os.sep+'._DisplayNode'+os.sep
 
 RESOURCES = {                        
-                'three.js':         {'url':  'http://stemkoski.github.io/Three.js/js/Three.js',     
+                'three.js':         {'url':  'http://threejs.org/build/three.js',     
                                      'local': False, 
-                                     'location':'./static/'},
+                                     'location':'.'+os.sep+'static'+os.sep},
+                                     
+                'three.min.js':     {'url':  'http://threejs.org/build/three.min.js',     
+                                     'local': False, 
+                                     'location':'.'+os.sep+'static'+os.sep},    
+                                     
+                'TrackballControls.js': {'url':  'http://threejs.org/examples/js/controls/TrackballControls.js',     
+                                     'local': False, 
+                                     'location':'.'+os.sep+'static'+os.sep},  
+                                     
+                                     
+                'stats.min.js':     {'url':  'http://threejs.org/examples/js/libs/stats.min.js',     
+                                     'local': False, 
+                                     'location':'.'+os.sep+'static'+os.sep},  
+                                
+                                
                                           
                 'd3.v3.js':         {'url':  'http://d3js.org/d3.v3.js',           
                                      'local':False, 
-                                     'location':'./static/'},    
+                                     'location':'.'+os.sep+'static'+os.sep},    
                                      
                 'd3.v3.min.js':     {'url':  'http://d3js.org/d3.v3.min.js',       
                                      'local':False, 
-                                     'location':'./static/'},   
+                                     'location':'.'+os.sep+'static'+os.sep},   
                                      
+
 
                 'openseadragon.js': {'url':  'openseadragon/openseadragon.js',
                                      'local':True , 
-                                     'location':'./static/'},
+                                     'location':'.'+os.sep+'static'+os.sep},
+                                     
+                                     
                                      
                 'plot.html':        {'url':  'plot.html',                     
                                      'local':True , 
-                                     'location':'./static/'},
+                                     'location':'.'+os.sep+'static'+os.sep},
                                      
-                'three.html':       {'url':  'three.html',                    
+                'three_cubes.html': {'url':  'three_cubes.html',                    
                                      'local':True , 
-                                     'location':'./static/'},
+                                     'location':'.'+os.sep+'static'+os.sep},
                                      
                 'graph.html':       {'url':  'graph.html',                    
                                      'local':True , 
-                                     'location':'./static/'},  
+                                     'location':'.'+os.sep+'static'+os.sep},  
                                             
                 'index.html':       {'url':  'index.html',                    
                                      'local':True , 
-                                     'location':'./static/'},          } 
+                                     'location':'.'+os.sep+'static'+os.sep},          } 
 
 
 
@@ -153,7 +171,7 @@ class Content():
         needed_html = ''
         for r in resources: 
             if r.endswith('.js'): 
-                l = "<script type='text/javascript' src='%s'></script>"%(RESOURCES[r]['location']+r)
+                l = "<script type='text/javascript' src='%s'></script>"%(RESOURCES[r]['location'].replace(os.sep,"/")+r)
             elif r.endswith('.css'): 
                 pass
             else: 
@@ -202,13 +220,13 @@ class Graph(Content):
         self.html = self._decorate_with_resources(self.html,self.resources) 
         # FIXME: data
     
-class Three(Content): 
+class ThreeCubes(Content): 
     def __init__(self,data): 
         Content.__init__(self)
         self.data = data
-        self.name = 'three'
-        self.template = 'three.html'
-        self.resources = ['three.js',] 
+        self.name = 'three_cubes'
+        self.template = 'three_cubes.html'
+        self.resources = ['three.min.js','TrackballControls.js','stats.min.js'] 
         self.make_content()
         
     def make_content(self): 
@@ -309,8 +327,8 @@ class ContentProvider():
             content = Image(content_descriptor['data']) 
         elif content_descriptor['type'] == 'graph': 
             content = Graph(content_descriptor['data']) 
-        elif content_descriptor['type'] == 'three': 
-            content = Three(content_descriptor['data']) 
+        elif content_descriptor['type'] == 'three_cubes': 
+            content = ThreeCubes(content_descriptor['data']) 
         else: 
             return 'nokey'           
         self.dict[key] = content
