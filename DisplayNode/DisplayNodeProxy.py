@@ -14,7 +14,7 @@ import sys
 import socket
 
 import platform 
-if platform.system() == "Darwin": 
+if platform.system() == "Windows": 
     from multiprocessing import Process
     import signal
     USE_MULTIPROCESSING = True
@@ -42,6 +42,7 @@ class DisplayNode():
         if not self.is_server_responding(): 
             self._server = DisplayNodeServer(proxy_address,web_address)
             if USE_MULTIPROCESSING: 
+                print "Multiprocessing version! "
                 self._server_process = Process( target=self.__run_server_forever, args=() )
                 self._server_process.start()
             else: 
