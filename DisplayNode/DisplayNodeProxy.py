@@ -10,14 +10,22 @@ from DisplayNodeServer import DisplayNodeServer
 from DisplayNodeServer import PROXY_ADDRESS,PROXY_PORT,WEB_ADDRESS,WEB_PORT
 from xmlrpclib import Server 
 import webbrowser
-from multiprocessing import Process
-import signal, sys
+import sys
 import socket
+
+import platform 
+if platform.system() == "Darwin": 
+    from multiprocessing import Process
+    import signal
+    USE_MULTIPROCESSING = True
+else:
+    import thread
+    USE_MULTIPROCESSING = False
 
 socket.setdefaulttimeout(2)
 
-WIDTH = 800 #FIXME: obtain display specific width and height form the server
-HEIGHT = 400
+WIDTH  = 900 #FIXME: obtain display specific width and height form the server
+HEIGHT = 500
 
 class DisplayNode(): 
     def __init__(self,proxy_address=(PROXY_ADDRESS,PROXY_PORT), web_address=(WEB_ADDRESS,WEB_PORT)): 
@@ -33,13 +41,15 @@ class DisplayNode():
     def start_server(self,proxy_address,web_address): 
         if not self.is_server_responding(): 
             self._server = DisplayNodeServer(proxy_address,web_address)
-            #self._server_process = Process( target=self.__run_server_forever, args=() )
-            import thread
-            thread.start_new_thread( self.__run_server_forever, () )
-            #self._server_process.start()
+            if USE_MULTIPROCESSING: 
+                self._server_process = Process( target=self.__run_server_forever, args=() )
+                self._server_process.start()
+            else: 
+                thread.start_new_thread( self.__run_server_forever, () )
     
     def __run_server_forever(self): 
-        #signal.signal(signal.SIGINT, self.__signal_handler_interrupt)
+        if USE_MULTIPROCESSING: 
+            signal.signal(signal.SIGINT, self.__signal_handler_interrupt)
         self._server.serve_forever() 
 
     def __signal_handler_interrupt(self, signal, frame):
@@ -63,8 +73,8 @@ class DisplayNode():
         self.data = data
         self.type = content_type
         self.url = url
-        self.width = 800  #FIXME: obtain width and height from the server
-        self.height = 400
+        self.width = WIDTH  #FIXME: obtain width and height from the server
+        self.height = HEIGHT
         return self
 
     def display_in_browser(self,content_type,data={},new_tab=False,autoraise=False): 
