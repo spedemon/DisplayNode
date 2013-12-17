@@ -8,13 +8,13 @@
 
 from DisplayNodeServer import DisplayNodeServer
 from DisplayNodeServer import PROXY_ADDRESS,PROXY_PORT,WEB_ADDRESS,WEB_PORT
-from xmlrpclib import Server 
+from xmlrpclib import Server, Binary  
 import webbrowser
 import sys
 import socket
 
 import platform 
-if platform.system() == "Windows": 
+if platform.system() == "None": 
     from multiprocessing import Process
     import signal
     USE_MULTIPROCESSING = True
@@ -65,6 +65,13 @@ class DisplayNode():
         return alive 
 
     def display(self,content_type,data={},open_browser=False,new_tab=False,autoraise=False): 
+        # if image: send png content
+        if content_type=="image": 
+            from StringIO import StringIO
+            buf = StringIO()
+            data.convert("RGB").save(buf,format="JPEG") 
+            data = Binary(buf.getvalue()) 
+            buf.close() 
         url = self._proxy.display({'type':content_type,'data':data}) 
         if open_browser:
             if new_tab:  

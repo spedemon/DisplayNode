@@ -13,6 +13,8 @@ import urllib2
 import os, time, shutil, random
 from thread import start_new_thread 
 from math import floor
+import json
+import Image as PIL
 
 NO_KEY = "<html><head><title>NodeDisplay</title></head><body><p>NodeDisplay: no key</p></body></html>"
 
@@ -22,6 +24,10 @@ PROXY_ADDRESS = '127.0.0.1'
 PROXY_PORT    = 8002
 
 LOCAL_STORAGE_PATH = '.'+os.sep+'._DisplayNode'+os.sep
+
+RESOURCES_STRING = "<!resources>"        
+DATA_STRING = "<!data>"
+STYLE_STRING = "<!style>"
 
 RESOURCES = {                        
                 'three.js':         {'url':  'http://threejs.org/build/three.js',     
@@ -53,8 +59,8 @@ RESOURCES = {
                                      
 
 
-                'openseadragon.js': {'url':  'openseadragon/openseadragon.js',
-                                     'local':True , 
+                'openseadragon.js': {'url':  'http://openseadragon.github.io/openseadragon/openseadragon.js',
+                                     'local':False , 
                                      'location':'.'+os.sep+'static'+os.sep},
                                      
                                      
@@ -70,7 +76,11 @@ RESOURCES = {
                 'graph.html':       {'url':  'graph.html',                    
                                      'local':True , 
                                      'location':'.'+os.sep+'static'+os.sep},  
-                                            
+
+                'image.html':       {'url':  'image.html',                    
+                                     'local':True , 
+                                     'location':'.'+os.sep+'static'+os.sep},  
+                                     
                 'index.html':       {'url':  'index.html',                    
                                      'local':True , 
                                      'location':'.'+os.sep+'static'+os.sep},          } 
@@ -98,9 +108,12 @@ class FrontendServer(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         """Respond to a GET request."""
         self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        key = self.path
+#        if key.endswith('.jpeg'): 
+#            self.send_header("Content-type", "image/jpeg")        
+#        else:
+        self.send_header("Content-type", "text/html")        
+        self.end_headers()        
+        key = self.path        
         html = self.handler(key)
         self.wfile.write(html) 
 
@@ -164,11 +177,17 @@ class Content():
     def get_html(self): 
         return self.html 
 
+    def get_data(self): 
+        return self.data 
+        
+    def get_data_filename(self): 
+        return self.data_filename 
+        
     def make_content(self):
         self.html = ''
 
     def _decorate_with_resources(self,html,resources): 
-        needed_html = ''
+        resources_html = ''
         for r in resources: 
             if r.endswith('.js'): 
                 l = "<script type='text/javascript' src='%s'></script>"%(RESOURCES[r]['location'].replace(os.sep,"/")+r)
@@ -176,9 +195,15 @@ class Content():
                 pass
             else: 
                 pass
-            needed_html = needed_html + l +'\n'
-        return html.replace('<head>', '<head>%s' % needed_html, 1)
+            resources_html = resources_html + l +'\n'
+        return html.replace(RESOURCES_STRING, resources_html, 1) 
 
+    def _decorate_with_data(self,html,data_string): 
+        return html.replace(DATA_STRING, data_string, 1) 
+    
+    def _decorate_with_style(self,html,style_string): 
+        return html.replace(STYLE_STRING,style_string)
+        
 
 class Plot(Content): 
     def __init__(self,data): 
@@ -192,20 +217,53 @@ class Plot(Content):
     def make_content(self): 
         self.html = "<html><head><title>NodeDisplay</title></head><body><p>Plot</p></body></html>"
         self.html = self._decorate_with_resources(self.html,self.resources) 
-
+        data_string = ""
+        self.html = self._decorate_with_data(self.html,data_string) 
+        
 class Image(Content): 
     def __init__(self,data): 
         Content.__init__(self)
-        self.data = data
+        self.data = data.data
         self.name = 'image'
         self.template = 'image.html'
         self.resources = ['openseadragon.js',]
         self.make_content()
 
     def make_content(self): 
-        self.html = self.read_remplate()
+        self.html = self.resource_manager.get_resource_data(self.template)
+        # resources 
         self.html = self._decorate_with_resources(self.html,self.resources) 
-       
+        # data
+        image_filename = str(int(floor(random.random()*10000000+1)))+".jpeg" 
+        fid = open(LOCAL_STORAGE_PATH + os.sep + image_filename,'wb')
+        fid.write(self.data)
+        fid.close()
+        im = PIL.open(LOCAL_STORAGE_PATH + os.sep + image_filename)
+        (width,height) = im.size
+        self.html = self._decorate_with_data(self.html,"{'url': '%s', 'width': %d, 'height': %d}"%("./"+image_filename,8*width,8*height)) 
+        # style
+        style_string = """<style media="screen" type="text/css"> 
+            body {
+                margin:     0;
+                color:      #333;
+                font-family: Helvetica, Arial, FreeSans, san-serif;
+                background-color: #FFFFFF;/*#0e182e;*/
+                 }
+            .openseadragon
+            {
+                width:      %dpx;
+                height:     %dpx;
+                border:     1px solid black;
+                color:      #333; /* text color for messages */
+                background-color: black;
+                cursor:pointer;
+                position:relative;
+                margin:auto;
+                cursor:pointer; 
+            }
+            </style> """%(800,450)
+        self.html = self._decorate_with_style(self.html,style_string) 
+        
 class Graph(Content): 
     def __init__(self,data): 
         Content.__init__(self)
@@ -218,7 +276,9 @@ class Graph(Content):
     def make_content(self): 
         self.html = self.resource_manager.get_resource_data(self.template)
         self.html = self._decorate_with_resources(self.html,self.resources) 
-        # FIXME: data
+        data_string = "var graph = " + json.dumps(self.data)
+        data_string = "<script type='text/javascript'> %s </script>"%data_string
+        self.html = self._decorate_with_data(self.html,data_string) 
     
 class ThreeCubes(Content): 
     def __init__(self,data): 
@@ -232,11 +292,12 @@ class ThreeCubes(Content):
     def make_content(self): 
         self.html = self.resource_manager.get_resource_data(self.template)
         self.html = self._decorate_with_resources(self.html,self.resources) 
-        # FIXME: data
+        data_string = ""
+        self.html = self._decorate_with_data(self.html,data_string) 
 
 
 
-
+        
 class ResourceManager(): 
     def __init__(self,local_storage_path=LOCAL_STORAGE_PATH): 
         self.local_storage_path = local_storage_path
@@ -299,7 +360,7 @@ class ResourceManager():
                 location = RESOURCES[resource]['location']
                 resource = location + resource
             resource = self.local_storage_path + resource
-            fid = open(resource,'r') 
+            fid = open(resource,'rb') 
             d = fid.read() 
             fid.close()
             return d 
@@ -347,9 +408,9 @@ class ContentProvider():
             return content
         else: 
             # if it is a valid static file, serve it 
-            if not self.resource_manager.is_valid_local_resource(resource_path=key): 
-                return NO_KEY
-            else: 
+#            if not self.resource_manager.is_valid_local_resource(resource_path=key): 
+#                return NO_KEY
+#            else: 
                 content = self.resource_manager.get_resource_data(resource=key,full_path=True)
                 return content
     def start_maintainance(self):

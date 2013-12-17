@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <!resources>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8">
     <title>DisplayNode graph</title>
     <style type="text/css">
@@ -30,7 +31,7 @@ circle {
 }
 
 text {
-  font: 8px sans-serif;
+  font: 10px sans-serif;
   pointer-events: none;
 }
 
@@ -43,9 +44,7 @@ text.shadow {
 </style>
 </head>
 <body>
-<script type="text/javascript">
-var graph = {"nodes": [{"type": 0, "name": "MultivariateGaussian: mu"}, {"type": 0, "name": "MultivariateGaussian: x"}, {"type": 0, "name": "MultivariateGaussian: cov"}, {"type": 0, "name": "Poisson: alpha"}, {"type": 2, "name": "Poisson: z"}, {"type": 0, "name": "Poisson: lambda"}, {"type": 0, "name": "Smoothness: x"}, {"type": 0, "name": "Smoothness: beta"}], "links": [{"source": "MultivariateGaussian: mu", "type": "t1", "target": "MultivariateGaussian: x"}, {"source": "MultivariateGaussian: cov", "type": "t1", "target": "MultivariateGaussian: x"}, {"source": "Poisson: lambda", "type": "t1", "target": "Poisson: z"}, {"source": "Poisson: alpha", "type": "t1", "target": "Poisson: z"}, {"source": "Smoothness: beta", "type": "t1", "target": "Smoothness: x"}]}
-</script>
+<!data>
 
 <script type="text/javascript">
 
