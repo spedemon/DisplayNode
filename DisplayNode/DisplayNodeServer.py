@@ -63,7 +63,9 @@ RESOURCES = {
                                      'local':False , 
                                      'location':'.'+os.sep+'static'+os.sep},
                                      
-                                     
+                'openseadragon/images': {'url':  'openseadragon/images',
+                                     'local':True , 
+                                     'location':'.'+os.sep+'static'+os.sep},                                     
                                      
                 'plot.html':        {'url':  'plot.html',                     
                                      'local':True , 
@@ -234,7 +236,7 @@ class Image(Content):
         # resources 
         self.html = self._decorate_with_resources(self.html,self.resources) 
         # data
-        image_filename = str(int(floor(random.random()*10000000+1)))+".jpeg" 
+        image_filename = str(int(floor(random.random()*10000000+1)))+".png" 
         fid = open(LOCAL_STORAGE_PATH + os.sep + image_filename,'wb')
         fid.write(self.data)
         fid.close()
@@ -305,7 +307,7 @@ class ResourceManager():
         
     def initialize_local_storage(self): 
         if not os.path.exists(self.local_storage_path): 
-            os.mkdir(self.local_storage_path) 
+            os.makedirs(self.local_storage_path) 
         # copy all the resources defined as local 
         for rname in RESOURCES.keys(): 
             r = RESOURCES[rname] 
@@ -316,8 +318,16 @@ class ResourceManager():
                 source = os.path.split(__file__)[0]+rlocation+rname
                 destination = self.local_storage_path+rlocation+rname
                 if not os.path.exists(os.path.split(destination)[0]): 
-                    os.mkdir(os.path.split(destination)[0]) 
-                shutil.copy(source,destination) 
+                    os.makedirs(os.path.split(destination)[0]) 
+                if os.path.isdir(source): 
+                    for file in os.listdir(source):
+                        if os.path.isfile(source+os.sep+file):  
+                            if not os.path.exists(destination+os.sep): 
+                                os.makedirs(destination+os.sep)
+                            shutil.copy(source+os.sep+file,destination+os.sep+file) 
+                else: 
+                    if os.path.isfile(source): 
+                        shutil.copy(source,destination) 
                     
     def is_resource(self,resource_name): 
         return (resource_name in RESOURCES.keys()) 
@@ -332,10 +342,12 @@ class ResourceManager():
     def is_available_locally(self,resource,full_path=False): 
         if not full_path:
             if not self.is_resource(resource): 
+#                print "#### Not available. "
                 return False 
             location = RESOURCES[resource]['location']  
             resource = location + resource 
-        resource = self.local_storage_path + resource
+        resource = self.local_storage_path + resource 
+#        print "#### path: ",resource
         return os.path.exists(resource)
 
     def fetch_resource(self,resource_name): 
@@ -353,6 +365,7 @@ class ResourceManager():
         print "Fetched %d bytes in %2.3f sec."%(len(content),time.time()-t)
 
     def get_resource_data(self,resource,full_path=False): 
+#        print "###",resource
         if not self.is_available_locally(resource,full_path=full_path): 
             return None
         else: 

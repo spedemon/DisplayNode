@@ -69,7 +69,7 @@ class DisplayNode():
         if content_type=="image": 
             from StringIO import StringIO
             buf = StringIO()
-            data.convert("RGB").save(buf,format="JPEG") 
+            data.convert("RGB").save(buf,format="PNG") 
             data = Binary(buf.getvalue()) 
             buf.close() 
         url = self._proxy.display({'type':content_type,'data':data}) 
