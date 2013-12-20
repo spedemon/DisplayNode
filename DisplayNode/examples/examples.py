@@ -84,11 +84,13 @@ class ExampleObjectThatHasGraphicalRepresentation():
     from DisplayNode.examples import ExampleObjectThatHasGraphicalRepresentation
     ExampleObjectThatHasGraphicalRepresentation() 
     """
-    def _repr_html_(self):
-        d = DisplayNode()
-        graph = {'nodes':[{'name': 'A', 'type': 0}, {'name': 'B', 'type': 1}, {'name': 'C', 'type': 0}, {'name': 'D', 'type': 2}], 'links': [{'source': 'A', 'target': 'B', 'type': 't1'},
+    def make_graph_of_self(self): 
+        return {'nodes':[{'name': 'A', 'type': 0}, {'name': 'B', 'type': 1}, {'name': 'C', 'type': 0}, {'name': 'D', 'type': 2}], 'links': [{'source': 'A', 'target': 'B', 'type': 't1'},
   {'source': 'A', 'target': 'C', 'type': 't1'},{'source': 'C', 'target': 'D', 'type': 't2'} ] }
-        d.display('graph',graph) 
+  
+    def _repr_html_(self): 
+        d = DisplayNode()
+        d.display('graph', self.make_graph_of_self() ) 
         return d._repr_html_() 
         
 
