@@ -6,6 +6,7 @@
 # 20 Oct 2013, Helsinki 
 
 from DisplayNodeProxy import DisplayNode
+import examples
 
 
 
