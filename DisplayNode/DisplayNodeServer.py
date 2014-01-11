@@ -15,6 +15,7 @@ from thread import start_new_thread
 from math import floor
 import json
 import Image as PIL
+import pickle
 
 NO_KEY = "<html><head><title>NodeDisplay</title></head><body><p>NodeDisplay: no key</p></body></html>"
 
@@ -58,14 +59,27 @@ RESOURCES = {
                                      'location':'.'+os.sep+'static'+os.sep},   
                                      
 
-
                 'openseadragon.js': {'url':  'http://openseadragon.github.io/openseadragon/openseadragon.js',
                                      'local':False , 
                                      'location':'.'+os.sep+'static'+os.sep},
                                      
                 'openseadragon/images': {'url':  'openseadragon/images',
                                      'local':True , 
-                                     'location':'.'+os.sep+'static'+os.sep},                                     
+                                     'location':'.'+os.sep+'static'+os.sep},    
+                                     
+                                     
+                'tipix/js':         {'url':  'tipix/js/',
+                                     'local':True , 
+                                     'location':'.'+os.sep+'static'+os.sep},  
+                                     
+                'tipix/style':      {'url':  'tipix/style/',
+                                     'local':True , 
+                                     'location':'.'+os.sep+'static'+os.sep},      
+                                     
+                'tipix/images':     {'url':  'tipix/images/',
+                                     'local':True , 
+                                     'location':'.'+os.sep+'static'+os.sep}, 
+                                                                                                      
                                      
                 'plot.html':        {'url':  'plot.html',                     
                                      'local':True , 
@@ -82,6 +96,10 @@ RESOURCES = {
                 'image.html':       {'url':  'image.html',                    
                                      'local':True , 
                                      'location':'.'+os.sep+'static'+os.sep},  
+                                     
+                'tipix.html':       {'url':  'tipix.html',                    
+                                     'local':True , 
+                                     'location':'.'+os.sep+'static'+os.sep}, 
                                      
                 'index.html':       {'url':  'index.html',                    
                                      'local':True , 
@@ -110,10 +128,17 @@ class FrontendServer(BaseHTTPServer.BaseHTTPRequestHandler):
     def do_GET(self):
         """Respond to a GET request."""
         self.send_response(200)
-#        if key.endswith('.jpeg'): 
-#            self.send_header("Content-type", "image/jpeg")        
-#        else:
-        self.send_header("Content-type", "text/html")        
+        if self.path.endswith('.jpeg'): 
+            self.send_header("Content-type", "image/jpeg")   
+        elif self.path.endswith('.jpg'): 
+            self.send_header("Content-type", "image/jpeg")   
+        elif self.path.endswith('.js'):
+            self.send_header("Content-type", "text/javascript")
+        elif self.path.endswith('.css'):
+            self.send_header("Content-type", "text/css")
+        else:
+            self.send_header("Content-type", "text/html")   
+        #print "## ",self.path     
         self.end_headers()        
         key = self.path        
         html = self.handler(key)
@@ -124,10 +149,10 @@ class FrontendServer(BaseHTTPServer.BaseHTTPRequestHandler):
         self.client_address = client_address
         self.server = server
         self.setup()
-        try:
-            self.handle()
-        finally:
-            self.finish()
+#        try:
+        self.handle()
+#        finally:
+#            self.finish()
 
     def log_message(self,*arg): 
         pass 
@@ -190,9 +215,10 @@ class Content():
 
     def _decorate_with_resources(self,html,resources): 
         resources_html = ''
+        l = ''
         for r in resources: 
             if r.endswith('.js'): 
-                l = "<script type='text/javascript' src='%s'></script>"%(RESOURCES[r]['location'].replace(os.sep,"/")+r)
+                l = l+"<script type='text/javascript' src='%s'></script>\n"%(RESOURCES[r]['location'].replace(os.sep,"/")+r)
             elif r.endswith('.css'): 
                 pass
             else: 
@@ -265,7 +291,40 @@ class Image(Content):
             }
             </style> """%(800,450)
         self.html = self._decorate_with_style(self.html,style_string) 
+
         
+
+class Tipix(Content): 
+    def __init__(self,data): 
+        Content.__init__(self)
+        self.data = []
+        for d in data: 
+            self.data.append(d.data)
+        self.name = 'tipix'
+        self.template = 'tipix.html'
+        self.resources = ['tipix/js','tipix/style','tipix/images'] 
+        self.make_content() 
+        
+    def make_content(self): 
+        self.html = self.resource_manager.get_resource_data(self.template)
+        # resources 
+        #self.html = self._decorate_with_resources(self.html,self.resources) 
+        # data
+        i = 1
+        base_name = str(int(floor(random.random()*10000000+1)))
+        for image_string in self.data: 
+            image_filename = base_name+"_"+str(i)+".png" 
+            fid = open(LOCAL_STORAGE_PATH + os.sep + image_filename,'wb')
+            #print "saving image as  %s"%(LOCAL_STORAGE_PATH + os.sep + image_filename)
+            fid.write(image_string)
+            fid.close()
+            im = PIL.open(LOCAL_STORAGE_PATH + os.sep + image_filename)
+            (width,height) = im.size
+            i+=1 
+        data_string = "<script type='text/javascript'>"+"launchDisplayWeb(%d, %d, %d, '"%(1,len(self.data),1)+base_name+"_%d.png');"+" </script>"
+        self.html = self._decorate_with_data(self.html,data_string) 
+
+  
 class Graph(Content): 
     def __init__(self,data): 
         Content.__init__(self)
@@ -390,15 +449,19 @@ class ContentProvider():
         return str(int(floor(random.random()*10000000+1))) #make sure it's unique FIXME
 
     def make_content(self,content_descriptor): 
+        print "make_content: ",content_descriptor['type']
         key = self._generate_key()  
         if not isinstance(content_descriptor,type({})): 
             return 'invalid' 
         if not (content_descriptor.has_key('type') and content_descriptor.has_key('data')): 
             return 'invalid' 
+        print "Content seems valid "
         if content_descriptor['type'] == 'plot': 
             content = Plot(content_descriptor['data']) 
         elif content_descriptor['type'] == 'image': 
             content = Image(content_descriptor['data']) 
+        elif content_descriptor['type'] == 'tipix': 
+            content = Tipix(content_descriptor['data'])      
         elif content_descriptor['type'] == 'graph': 
             content = Graph(content_descriptor['data']) 
         elif content_descriptor['type'] == 'three_cubes': 

@@ -12,6 +12,8 @@ from xmlrpclib import Server, Binary
 import webbrowser
 import sys
 import socket
+from StringIO import StringIO
+import Image as PIL
 
 import platform 
 if platform.system() == "None": 
@@ -26,6 +28,14 @@ socket.setdefaulttimeout(2)
 
 WIDTH  = 900 #FIXME: obtain display specific width and height form the server
 HEIGHT = 500
+
+
+class ParameterError(Exception): 
+    def __init__(self,msg): 
+        self.msg = str(msg) 
+    def __str__(self): 
+        return "Unexpected parameter: %s"%(self.msg)
+        
 
 class DisplayNode(): 
     def __init__(self,proxy_address=(PROXY_ADDRESS,PROXY_PORT), web_address=(WEB_ADDRESS,WEB_PORT)): 
@@ -67,11 +77,21 @@ class DisplayNode():
     def display(self,content_type,data={},open_browser=False,new_tab=False,autoraise=False): 
         # if image: send png content
         if content_type=="image": 
-            from StringIO import StringIO
             buf = StringIO()
             data.convert("RGB").save(buf,format="PNG") 
             data = Binary(buf.getvalue()) 
             buf.close() 
+        # if list of images: send list of png content
+        if content_type=="tipix": 
+            if not type(data)==list:
+                raise ParameterError("Parameter for 'tipix' must be a list of images.") 
+            for i in range(len(data)): 
+                if not isinstance(data[i],PIL.Image): 
+                    raise ParameterError("Parameter for 'tipix' must be a list of images.") 
+                buf = StringIO()
+                data[i].convert("RGB").save(buf,format="PNG") 
+                data[i] = Binary(buf.getvalue()) 
+                buf.close()    
         url = self._proxy.display({'type':content_type,'data':data}) 
         if open_browser:
             if new_tab:  
@@ -94,7 +114,5 @@ class DisplayNode():
         return '<iframe src=%s width=%d height=%d frameborder=0></iframe>'%(self.url,self.width,self.height)
 
 
-if __name__ == "__main__": 
-    D = DisplayNodeServer()
-    D.display('graph','') 
+
 
