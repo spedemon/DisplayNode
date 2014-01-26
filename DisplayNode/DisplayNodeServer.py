@@ -17,6 +17,11 @@ import json
 import Image as PIL
 import pickle
 
+import socket
+socket.setdefaulttimeout(60)
+
+
+
 NO_KEY = "<html><head><title>NodeDisplay</title></head><body><p>NodeDisplay: no key</p></body></html>"
 
 WEB_ADDRESS   = '127.0.0.1'
@@ -296,10 +301,18 @@ class Image(Content):
 
 class Tipix(Content): 
     def __init__(self,data): 
-        Content.__init__(self)
-        self.data = []
+        Content.__init__(self) 
+        self.data = [] 
+        # data can be a list (1D array of images) or a list of lists (2D array of images). 
+        # Each element is of type Binary. Extract the binary data: 
         for d in data: 
-            self.data.append(d.data)
+            if type(d)==list: 
+                D = [] 
+                for d_inner in d: 
+                    D.append(d_inner.data)
+            else: 
+                D = d.data 
+            self.data.append(D)
         self.name = 'tipix'
         self.template = 'tipix.html'
         self.resources = ['tipix/js','tipix/style','tipix/images'] 
@@ -309,19 +322,36 @@ class Tipix(Content):
         self.html = self.resource_manager.get_resource_data(self.template)
         # resources 
         #self.html = self._decorate_with_resources(self.html,self.resources) 
-        # data
-        i = 1
-        base_name = str(int(floor(random.random()*10000000+1)))
-        for image_string in self.data: 
-            image_filename = base_name+"_"+str(i)+".png" 
-            fid = open(LOCAL_STORAGE_PATH + os.sep + image_filename,'wb')
-            #print "saving image as  %s"%(LOCAL_STORAGE_PATH + os.sep + image_filename)
-            fid.write(image_string)
-            fid.close()
-            im = PIL.open(LOCAL_STORAGE_PATH + os.sep + image_filename)
-            (width,height) = im.size
-            i+=1 
-        data_string = "<script type='text/javascript'>"+"launchDisplayWeb(%d, %d, %d, '"%(1,len(self.data),1)+base_name+"_%d.png');"+" </script>"
+        base_name = str(int(floor(random.random()*10000000+1))) 
+        # 2D array of images: 
+        if type(self.data[0])==list:
+            j = 1
+            for row in self.data: 
+                i = 1
+                for image_string in row: 
+                    image_filename = base_name+"_"+str(j)+"_"+str(i)+".png" 
+                    fid = open(LOCAL_STORAGE_PATH + os.sep + image_filename,'wb')
+                    #print "saving image as  %s"%(LOCAL_STORAGE_PATH + os.sep + image_filename)
+                    fid.write(image_string)
+                    fid.close()
+                    im = PIL.open(LOCAL_STORAGE_PATH + os.sep + image_filename)
+                    (width,height) = im.size
+                    i+=1 
+                j+=1
+            data_string = "<script type='text/javascript'>"+"launchDisplayWeb(%d, %d, %d, '"%(2,i-1,j-1)+base_name+"_%d_%d.png');"+" </script>"
+        # 1D array of images: 
+        else:        
+            i = 1
+            for image_string in self.data: 
+                image_filename = base_name+"_"+str(i)+".png" 
+                fid = open(LOCAL_STORAGE_PATH + os.sep + image_filename,'wb')
+                #print "saving image as  %s"%(LOCAL_STORAGE_PATH + os.sep + image_filename)
+                fid.write(image_string)
+                fid.close()
+                im = PIL.open(LOCAL_STORAGE_PATH + os.sep + image_filename)
+                (width,height) = im.size
+                i+=1 
+            data_string = "<script type='text/javascript'>"+"launchDisplayWeb(%d, %d, %d, '"%(1,len(self.data),1)+base_name+"_%d.png');"+" </script>"
         self.html = self._decorate_with_data(self.html,data_string) 
 
   
@@ -449,13 +479,13 @@ class ContentProvider():
         return str(int(floor(random.random()*10000000+1))) #make sure it's unique FIXME
 
     def make_content(self,content_descriptor): 
-        print "make_content: ",content_descriptor['type']
+        #print "make_content: ",content_descriptor['type']
         key = self._generate_key()  
         if not isinstance(content_descriptor,type({})): 
             return 'invalid' 
         if not (content_descriptor.has_key('type') and content_descriptor.has_key('data')): 
             return 'invalid' 
-        print "Content seems valid "
+        #print "Content seems valid "
         if content_descriptor['type'] == 'plot': 
             content = Plot(content_descriptor['data']) 
         elif content_descriptor['type'] == 'image': 

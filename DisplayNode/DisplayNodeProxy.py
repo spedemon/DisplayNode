@@ -24,10 +24,12 @@ else:
     import thread
     USE_MULTIPROCESSING = False
 
-socket.setdefaulttimeout(2)
 
-WIDTH  = 900 #FIXME: obtain display specific width and height form the server
-HEIGHT = 500
+socket.setdefaulttimeout(60)
+
+
+WIDTH  = '100%%' #'900' #FIXME: obtain display specific width and height form the server
+HEIGHT = '420'   
 
 
 class ParameterError(Exception): 
@@ -85,13 +87,24 @@ class DisplayNode():
         if content_type=="tipix": 
             if not type(data)==list:
                 raise ParameterError("Parameter for 'tipix' must be a list of images.") 
-            for i in range(len(data)): 
-                if not isinstance(data[i],PIL.Image): 
-                    raise ParameterError("Parameter for 'tipix' must be a list of images.") 
-                buf = StringIO()
-                data[i].convert("RGB").save(buf,format="PNG") 
-                data[i] = Binary(buf.getvalue()) 
-                buf.close()    
+            # 1D array of images: 
+            if isinstance(data[0],PIL.Image): 
+                for i in range(len(data)): 
+                    if not isinstance(data[i],PIL.Image): 
+                        raise ParameterError("Parameter for 'tipix' must be a list of images.") 
+                    buf = StringIO()
+                    data[i].convert("RGB").save(buf,format="PNG") 
+                    data[i] = Binary(buf.getvalue()) 
+                    buf.close()   
+            elif type(data[0])==list: 
+                for i in range(len(data)): 
+                    for j in range(len(data[i])):
+                        if not isinstance(data[i][j],PIL.Image): 
+                            raise ParameterError("Parameter for 'tipix' must be a list of images.") 
+                        buf = StringIO()
+                        data[i][j].convert("RGB").save(buf,format="PNG") 
+                        data[i][j] = Binary(buf.getvalue()) 
+                        buf.close()              
         url = self._proxy.display({'type':content_type,'data':data}) 
         if open_browser:
             if new_tab:  
@@ -101,7 +114,7 @@ class DisplayNode():
         self.data = data
         self.type = content_type
         self.url = url
-        self.width = WIDTH  #FIXME: obtain width and height from the server
+        self.width  = WIDTH  #FIXME: obtain width and height from the server
         self.height = HEIGHT
         return self
 
@@ -111,7 +124,7 @@ class DisplayNode():
 
     def _repr_html_(self): 
         # This method is for ipython notebook integration through Rich Display
-        return '<iframe src=%s width=%d height=%d frameborder=0></iframe>'%(self.url,self.width,self.height)
+        return '<iframe src=%s width=%s height=%s frameborder=0></iframe>'%(self.url,self.width,self.height)
 
 
 
