@@ -102,14 +102,16 @@ var path = svg.append("svg:g").selectAll("path")
     .attr("class", function(d) { return "link " + d.type; })
     .attr("marker-end", function(d) { return "url(#" + d.type + ")"; });
 
-colors = ['#fff','#ccc','#ee4'];
+colors  = ['#fff','#ccc','#ee4','#dddddd','#eeeeee','#ffffc0']; 
+strokes = ['#333','#333','#333','#dddddd','#dddddd','#dddddd']; 
 
 var circle = svg.append("svg:g").selectAll("circle")
     .data(force.nodes())
   .enter().append("svg:circle")
     .attr("r", 10)
     .call(force.drag)
-    .style('fill', function(d){return colors[d.type];});
+    .style('fill', function(d){return colors[d.type];})
+    .style('stroke', function(d){return strokes[d.type];});
 
 var text = svg.append("svg:g").selectAll("g")
     .data(force.nodes())
