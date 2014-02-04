@@ -5,6 +5,7 @@
 # 20 Oct 2013, Helsinki 
 
 
+import multiprocessing
 from setuptools import setup, Extension
 from glob import glob 
 

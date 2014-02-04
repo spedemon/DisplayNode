@@ -16,7 +16,8 @@ from StringIO import StringIO
 import Image as PIL
 
 import platform 
-if platform.system() == "None": 
+#if platform.system() == "Linux": 
+if 0:
     from multiprocessing import Process
     import signal
     USE_MULTIPROCESSING = True

@@ -17,17 +17,17 @@ import json
 import Image as PIL
 import pickle
 
-import socket
-socket.setdefaulttimeout(60)
+#import socket
+#socket.setdefaulttimeout(60)
 
 
 
 NO_KEY = "<html><head><title>NodeDisplay</title></head><body><p>NodeDisplay: no key</p></body></html>"
 
 WEB_ADDRESS   = '127.0.0.1'
-WEB_PORT      = 8001 
+WEB_PORT      = 8010 
 PROXY_ADDRESS = '127.0.0.1'
-PROXY_PORT    = 8002
+PROXY_PORT    = 8012
 
 LOCAL_STORAGE_PATH = '.'+os.sep+'._DisplayNode'+os.sep
 
@@ -143,7 +143,6 @@ class FrontendServer(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_header("Content-type", "text/css")
         else:
             self.send_header("Content-type", "text/html")   
-        #print "## ",self.path     
         self.end_headers()        
         key = self.path        
         html = self.handler(key)
@@ -157,7 +156,7 @@ class FrontendServer(BaseHTTPServer.BaseHTTPRequestHandler):
 #        try:
         self.handle()
 #        finally:
-#            self.finish()
+        self.finish()
 
     def log_message(self,*arg): 
         pass 
@@ -180,7 +179,7 @@ class BackendServer():
         return value
 
     def serve_forever(self,blocking):
-        #print time.asctime(), "BackebdServer Starts - %s:%s" % self.address 
+        #print time.asctime(), "BackebdServer Starts - %s:%s " % self.address, "(blocking=%d)"%blocking
         if blocking: 
             self.server.serve_forever()
         else: 
