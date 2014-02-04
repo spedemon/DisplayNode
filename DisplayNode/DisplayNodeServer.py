@@ -17,8 +17,8 @@ import json
 import Image as PIL
 import pickle
 
-#import socket
-#socket.setdefaulttimeout(60)
+import socket
+socket.setdefaulttimeout(60)
 
 
 
