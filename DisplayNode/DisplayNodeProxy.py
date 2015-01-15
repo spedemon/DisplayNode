@@ -13,7 +13,7 @@ import webbrowser
 import sys
 import socket
 from StringIO import StringIO
-import Image as PIL
+import Image
 
 import platform 
 #if platform.system() == "Linux": 
@@ -29,8 +29,8 @@ else:
 socket.setdefaulttimeout(60)
 
 
-WIDTH  = '100%%' #'900' #FIXME: obtain display specific width and height form the server
-HEIGHT = '420'   
+WIDTH  = '900' #'900' #FIXME: obtain display specific width and height form the server
+HEIGHT = '450'   
 
 
 class ParameterError(Exception): 
@@ -42,7 +42,7 @@ class ParameterError(Exception):
 
 class DisplayNode(): 
     def __init__(self,proxy_address=(PROXY_ADDRESS,PROXY_PORT), web_address=(WEB_ADDRESS,WEB_PORT)): 
-        self._proxy = Server('http://%s:%s'%proxy_address) 
+        self._proxy = Server('http://%s:%s'%proxy_address, allow_none=True) 
         self.start_server(proxy_address,web_address) 
         self.data = None
         self.type = None
@@ -77,11 +77,11 @@ class DisplayNode():
             alive = False
         return alive 
 
-    def display(self,content_type,data={},open_browser=False,new_tab=False,autoraise=False): 
+    def display(self,content_type,data={},open_browser=False,new_tab=True,autoraise=False): 
         # if image: send png content
         if content_type=="image": 
             buf = StringIO()
-            data.convert("RGB").save(buf,format="PNG") 
+            data.convert("RGB").save(buf,format="png") 
             data = Binary(buf.getvalue()) 
             buf.close() 
         # if list of images: send list of png content
@@ -89,23 +89,23 @@ class DisplayNode():
             if not type(data)==list:
                 raise ParameterError("Parameter for 'tipix' must be a list of images.") 
             # 1D array of images: 
-            if isinstance(data[0],PIL.Image): 
+            if type(data[0])!=list:
                 for i in range(len(data)): 
-                    if not isinstance(data[i],PIL.Image): 
+                    if not isinstance(data[i],Image.Image): 
                         raise ParameterError("Parameter for 'tipix' must be a list of images.") 
                     buf = StringIO()
-                    data[i].convert("RGB").save(buf,format="PNG") 
+                    data[i].convert("RGB").save(buf,format="png") 
                     data[i] = Binary(buf.getvalue()) 
                     buf.close()   
-            elif type(data[0])==list: 
+            else: 
                 for i in range(len(data)): 
                     for j in range(len(data[i])):
-                        if not isinstance(data[i][j],PIL.Image): 
+                        if not isinstance(data[i][j],Image.Image): 
                             raise ParameterError("Parameter for 'tipix' must be a list of images.") 
                         buf = StringIO()
-                        data[i][j].convert("RGB").save(buf,format="PNG") 
+                        data[i][j].convert("RGB").save(buf,format="png") 
                         data[i][j] = Binary(buf.getvalue()) 
-                        buf.close()              
+                        buf.close()         
         url = self._proxy.display({'type':content_type,'data':data}) 
         if open_browser:
             if new_tab:  
