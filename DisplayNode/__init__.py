@@ -5,11 +5,18 @@
 # 20 Oct 2013, Helsinki 
 # Harvard University, Martinos Center for Biomedical Imaging
 # Dec 2013, Boston, MA, USA 
+# Harvard University, Martinos Center for Biomedical Imaging
+# Dec 2014, Boston, MA, USA 
 
+__all__ = ['DisplayNode','examples','set_ports']
 
-__all__ = ['DisplayNode','examples']
+import DisplayNodeProxy
 from DisplayNodeProxy import DisplayNode
+import DisplayNodeServer
 import examples
 
-
-
+def set_ports(web,proxy):
+    DisplayNodeServer.WEB_PORT = web
+    DisplayNodeServer.PROXY_PORT = proxy
+    DisplayNodeProxy.WEB_PORT = web
+    DisplayNodeProxy.PROXY_PORT = proxy

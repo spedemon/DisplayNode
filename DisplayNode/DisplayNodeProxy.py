@@ -8,12 +8,17 @@
 
 from DisplayNodeServer import DisplayNodeServer
 from DisplayNodeServer import PROXY_ADDRESS,PROXY_PORT,WEB_ADDRESS,WEB_PORT
+
 from xmlrpclib import Server, Binary  
 import webbrowser
 import sys
 import socket
 from StringIO import StringIO
-import Image
+from PIL import Image
+try: 
+    import Image as IM
+except: 
+    IM=Image
 
 import platform 
 #if platform.system() == "Linux": 
@@ -25,13 +30,10 @@ else:
     import thread
     USE_MULTIPROCESSING = False
 
-
-socket.setdefaulttimeout(60)
-
-
 WIDTH  = '900' #'900' #FIXME: obtain display specific width and height form the server
 HEIGHT = '450'   
 
+socket.setdefaulttimeout(60)
 
 class ParameterError(Exception): 
     def __init__(self,msg): 
@@ -40,9 +42,17 @@ class ParameterError(Exception):
         return "Unexpected parameter: %s"%(self.msg)
         
 
+def is_an_image(im):
+    is_image = False
+    if isinstance(im,Image.Image) or isinstance(im,IM.Image): 
+        is_image=True
+    return is_image 
+
+
 class DisplayNode(): 
     def __init__(self,proxy_address=(PROXY_ADDRESS,PROXY_PORT), web_address=(WEB_ADDRESS,WEB_PORT)): 
-        self._proxy = Server('http://%s:%s'%proxy_address, allow_none=True) 
+        self._proxy = Server('http://%s:%s'%proxy_address,allow_none=True) 
+#        print "Proxy: ",proxy_address
         self.start_server(proxy_address,web_address) 
         self.data = None
         self.type = None
@@ -55,7 +65,7 @@ class DisplayNode():
         if not self.is_server_responding(): 
             self._server = DisplayNodeServer(proxy_address,web_address)
             if USE_MULTIPROCESSING: 
-                print "Multiprocessing version! "
+                #print "Multiprocessing version! "
                 self._server_process = Process( target=self.__run_server_forever, args=() )
                 self._server_process.start()
             else: 
@@ -71,10 +81,12 @@ class DisplayNode():
         sys.exit(0)
     
     def is_server_responding(self): 
+        socket.setdefaulttimeout(2)
         try:
             alive = self._proxy.is_alive(1) 
         except: 
             alive = False
+        socket.setdefaulttimeout(60)
         return alive 
 
     def display(self,content_type,data={},open_browser=False,new_tab=True,autoraise=False): 
@@ -89,23 +101,23 @@ class DisplayNode():
             if not type(data)==list:
                 raise ParameterError("Parameter for 'tipix' must be a list of images.") 
             # 1D array of images: 
-            if type(data[0])!=list:
+            if is_an_image(data[0]): 
                 for i in range(len(data)): 
-                    if not isinstance(data[i],Image.Image): 
+                    if not is_an_image(data[i]): 
                         raise ParameterError("Parameter for 'tipix' must be a list of images.") 
                     buf = StringIO()
                     data[i].convert("RGB").save(buf,format="png") 
                     data[i] = Binary(buf.getvalue()) 
                     buf.close()   
-            else: 
+            elif type(data[0])==list: 
                 for i in range(len(data)): 
                     for j in range(len(data[i])):
-                        if not isinstance(data[i][j],Image.Image): 
+                        if not is_an_image(data[i][j]): 
                             raise ParameterError("Parameter for 'tipix' must be a list of images.") 
                         buf = StringIO()
                         data[i][j].convert("RGB").save(buf,format="png") 
                         data[i][j] = Binary(buf.getvalue()) 
-                        buf.close()         
+                        buf.close()              
         url = self._proxy.display({'type':content_type,'data':data}) 
         if open_browser:
             if new_tab:  

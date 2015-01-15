@@ -14,20 +14,29 @@ import os, time, shutil, random
 from thread import start_new_thread 
 from math import floor
 import json
-import Image as PIL
+from PIL import Image as PIL
 import pickle
 
 import socket
 socket.setdefaulttimeout(60)
 
-
+from numpy.random import randint
 
 NO_KEY = "<html><head><title>NodeDisplay</title></head><body><p>NodeDisplay: no key</p></body></html>"
 
-WEB_ADDRESS   = '127.0.0.1'
-WEB_PORT      = 8010 
+global WEB_PROXY
+WEB_PROXY     = '54.149.190.53'
+global WEB_PROXY
+WEB_ADDRESS   = '0.0.0.0'
+global WEB_PORT
+WEB_PORT      = 10009
+global PROXY_ADDRESS
 PROXY_ADDRESS = '127.0.0.1'
-PROXY_PORT    = 8012
+global PROXY_PORT
+PROXY_PORT    = 12003
+
+#print "proxy: ",PROXY_ADDRESS,PROXY_PORT
+#print "web:   ",WEB_ADDRESS,WEB_PORT
 
 LOCAL_STORAGE_PATH = '.'+os.sep+'._DisplayNode'+os.sep
 
@@ -540,10 +549,11 @@ class DisplayNodeServer():
     def make_content(self,content_descriptor): 
         key = self.content_provider.make_content(content_descriptor)
         #print "New content at %s"%key
-        address = 'http://'+self.frontend_address[0]+":"+str(self.frontend_address[1])+"/"+key
+        address = 'http://'+WEB_PROXY+":"+str(self.frontend_address[1])+"/"+key
         return address
      
     def display(self,*args): 
+        #print "ARGS:", args
         return self.make_content(*args)
    
     def serve_forever(self): 
