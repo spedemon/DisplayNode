@@ -25,8 +25,8 @@ from numpy.random import randint
 NO_KEY = "<html><head><title>NodeDisplay</title></head><body><p>NodeDisplay: no key</p></body></html>"
 
 global WEB_PROXY
-WEB_PROXY     = '54.149.190.53'
-global WEB_PROXY
+WEB_PROXY     = '127.0.0.1'
+global WEB_ADDRESS
 WEB_ADDRESS   = '0.0.0.0'
 global WEB_PORT
 WEB_PORT      = 10009

@@ -12,7 +12,7 @@ from glob import glob
 
 setup(
     name='DisplayNode',
-    version='0.1.0',
+    version='0.2.0',
     author='Stefano Pedemonte',
     author_email='stefano.pedemonte@gmail.com',
     packages=['DisplayNode', 'DisplayNode.examples', 'DisplayNode.tests'], 
@@ -25,13 +25,12 @@ setup(
                 ('DisplayNode/static/tipix/images', glob('DisplayNode/static/tipix/images/*.*')),
     ],
     test_suite = "DisplayNode.tests", 
-    url='http://niftyrec.scienceontheweb.com/',
+    url='http://www.occiput.io/',
     license='LICENSE.txt',
-    description='Python and Javascript plotting and data visualisation.',
-    long_description=open('README.txt').read(),
+    description='Web-based plotting and data visualisation package.',
+    long_description=open('README.rst').read(),
     classifiers = [
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
         "Development Status :: 4 - Beta",
         "Environment :: Other Environment",
         "Intended Audience :: Science/Research",
