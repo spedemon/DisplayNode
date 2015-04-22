@@ -64,11 +64,11 @@ RESOURCES = {
                                 
                                 
                                           
-                'd3.v3.js':         {'url':  'http://d3js.org/d3.v3.js',           
+                'd3.v2.js':         {'url':  'http://d3js.org/d3.v2.js',           
                                      'local':False, 
                                      'location':'.'+os.sep+'static'+os.sep},    
                                      
-                'd3.v3.min.js':     {'url':  'http://d3js.org/d3.v3.min.js',       
+                'd3.v2.min.js':     {'url':  'http://d3js.org/d3.v2.min.js',       
                                      'local':False, 
                                      'location':'.'+os.sep+'static'+os.sep},   
                                      
@@ -252,7 +252,7 @@ class Plot(Content):
         self.data = data
         self.name = 'plot' 
         self.template = 'plot.html'
-        self.resources = ['d3.v3.min.js',]
+        self.resources = ['d3.v2.min.js',]
         self.make_content()
     
     def make_content(self): 
@@ -369,7 +369,7 @@ class Graph(Content):
         self.data = data
         self.name = 'graph'
         self.template = 'graph.html'
-        self.resources = ['d3.v3.min.js',]
+        self.resources = ['d3.v2.min.js',]
         self.make_content()
 
     def make_content(self): 

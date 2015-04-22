@@ -12,7 +12,7 @@ from glob import glob
 
 setup(
     name='DisplayNode',
-    version='0.2.0',
+    version='0.2.1',
     author='Stefano Pedemonte',
     author_email='stefano.pedemonte@gmail.com',
     packages=['DisplayNode', 'DisplayNode.examples', 'DisplayNode.tests'], 
